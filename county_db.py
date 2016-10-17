@@ -31,7 +31,7 @@ class CountyDB(object):
             cty_name = rec[self._ct_name_idx]
             st_abbrv = get_abbrev(rec[self._st_fips_idx])
 
-            if cty_name == 'Do?a Ana':
+            if cty_name.startswith('Do') and cty_name.endswith('a Ana'):
                 cty_name = 'Dona Ana'
 
             yield {'state': st_abbrv,

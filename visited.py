@@ -774,31 +774,3 @@ lived = [
     ('Sedgwick',    'KS'),
     ('Cleveland',   'OK'),
 ]
-
-def stats(cty_list):
-    print "Number of counties:", len(cty_list)
-    by_state = {}
-    by_name = {}
-
-    for c in cty_list:
-        try:
-            by_state[c[1]] += 1
-        except KeyError:
-            by_state[c[1]] = 1
-
-        try:
-            by_name[c[0]].append(c[1])
-        except KeyError:
-            by_name[c[0]] = [ c[1] ]
-
-    print "Number of states:", len(by_state.keys())
-
-    for state, count in sorted(by_state.items(), key=lambda x: x[1], reverse=True):
-        print "%s: %d" % (state, count)
-
-    for name, states in sorted(by_name.items(), key=lambda x: len(x[1]), reverse=True):
-        if len(states) > 1:
-            print "%s: %d (%s)" % (name, len(states), ", ".join(states))
-    return
-
-stats(visited)

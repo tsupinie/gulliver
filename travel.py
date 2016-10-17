@@ -20,3 +20,18 @@ class TravelManager(object):
         else:
             cnt = len(self._ctys)
         return cnt
+
+    def print_stats(self):
+        print "Number of counties:", self.count() 
+        by_state = {}
+
+        for c in self._ctys:
+            try:
+                by_state[c[1]] += 1
+            except KeyError:
+                by_state[c[1]] = 1
+
+        print "Number of states:", len(by_state.keys())
+
+        for state, count in sorted(by_state.items(), key=lambda x: x[1], reverse=True):
+            print "%s: %d" % (state, count)

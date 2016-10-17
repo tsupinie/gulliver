@@ -33,6 +33,8 @@ def main():
     trvl_slept = TravelManager(slept)
     trvl_lived = TravelManager(lived)
 
+    trvl_visited.print_stats()
+
     pylab.figure(figsize=(10, 8), dpi=150)
     ax_48 = pylab.axes((0, 0, 1, 1))
     ax_ak = inset_axes(ax_48, width=1.75, height=1.75, loc=3, bbox_transform=Affine2D().translate(0, -14))
