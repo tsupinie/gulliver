@@ -29,8 +29,12 @@ class CountyDB(object):
             part_bnds = [ (part_idxs[idx], part_idxs[idx + 1]) for idx in xrange(len(part_idxs) - 1) ]
 
             cty_name = rec[self._ct_name_idx]
+            st_abbrv = get_abbrev(rec[self._st_fips_idx])
 
-            yield {'state': get_abbrev(rec[self._st_fips_idx]),
+            if cty_name == 'Do?a Ana':
+                cty_name = 'Dona Ana'
+
+            yield {'state': st_abbrv,
                    'county': cty_name,
                    'points': [ shp.points[st:ed] for st, ed in part_bnds ]
                   }
