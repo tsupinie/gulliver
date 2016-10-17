@@ -24,9 +24,15 @@ class CountyDB(object):
 
     def __iter__(self):
         for rec, shp in izip(self._sf.iterRecords(), self._sf.iterShapes()):
+            part_idxs = shp.parts
+            part_idxs.append(len(shp.points))
+            part_bnds = [ (part_idxs[idx], part_idxs[idx + 1]) for idx in xrange(len(part_idxs) - 1) ]
+
+            cty_name = rec[self._ct_name_idx]
+
             yield {'state': get_abbrev(rec[self._st_fips_idx]),
-                   'county': rec[self._ct_name_idx],
-                   'points': shp.points
+                   'county': cty_name,
+                   'points': [ shp.points[st:ed] for st, ed in part_bnds ]
                   }
 
 if __name__ == "__main__":

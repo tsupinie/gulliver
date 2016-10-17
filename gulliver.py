@@ -64,15 +64,16 @@ def main():
             label = "Visited state"
             color = '#88ff88'
 
-        if cty['state'] == 'AK':
-            poly = Polygon(zip(*map_ak(*zip(*cty['points']))), fc=color, lw=0.5, label=label)
-            ax_ak.add_patch(poly)
-        elif cty['state'] == 'HI':
-            poly = Polygon(zip(*map_hi(*zip(*cty['points']))), fc=color, lw=0.5, label=label)
-            ax_hi.add_patch(poly)
-        else:
-            poly = Polygon(zip(*map_48(*zip(*cty['points']))), fc=color, lw=0.5, label=label)
-            ax_48.add_patch(poly)
+        for pt_list in cty['points']:
+            if cty['state'] == 'AK':
+                poly = Polygon(zip(*map_ak(*zip(*pt_list))), fc=color, lw=0.5, label=label)
+                ax_ak.add_patch(poly)
+            elif cty['state'] == 'HI':
+                poly = Polygon(zip(*map_hi(*zip(*pt_list))), fc=color, lw=0.5, label=label)
+                ax_hi.add_patch(poly)
+            else:
+                poly = Polygon(zip(*map_48(*zip(*pt_list))), fc=color, lw=0.5, label=label)
+                ax_48.add_patch(poly)
 
         if label != "Not visited" and (label not in labels or not labels[label]):
             legend_polys.append(poly)
