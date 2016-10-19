@@ -11,8 +11,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from mpl_toolkits.basemap import Basemap
 
-from county_db import CountyDB
-from travel import TravelManager
+from gulliver.county_db import CountyDB
+from gulliver.travel import TravelManager
 
 def main():
     ap = argparse.ArgumentParser()
