@@ -1,5 +1,6 @@
 import struct
 from datetime import datetime
+import argparse
 
 import matplotlib
 matplotlib.use('agg')
@@ -15,6 +16,12 @@ from county_db import CountyDB
 from travel import TravelManager
 
 def main():
+    ap = argparse.ArgumentParser()
+
+    ap.add_argument('--shp', dest='shp', help="Path to county shapefile", required=True)
+
+    args = ap.parse_args()
+
     # Lambert Conformal map of USA lower 48 states
     map_48 = Basemap(projection='lcc', resolution='i', 
         llcrnrlon=-119, llcrnrlat=22, urcrnrlon=-64, urcrnrlat=49,
@@ -28,7 +35,7 @@ def main():
         llcrnrlon=-160.5, llcrnrlat=18.7, urcrnrlon=-154.5, urcrnrlat=22.5,
         lat_1=19, lat_2=22, lon_0=-157, area_thresh=100)
 
-    db = CountyDB()
+    db = CountyDB(sf_path=args.shp)
     trvl_visited = TravelManager(visited)
     trvl_slept = TravelManager(slept)
     trvl_lived = TravelManager(lived)

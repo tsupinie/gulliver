@@ -1,18 +1,21 @@
 
 from itertools import izip
-import tarfile
-import gzip
 import zipfile
 import shutil
 import cStringIO
+import os
 
 import shapefile
 
 from fips import get_abbrev
 
 class CountyDB(object):
-    def __init__(self, sf_path="/Users/tsupinie/data/"):
-        sf_name = "tl_2016_us_county"
+    def __init__(self, sf_path="./tl_2016_us_county.zip"):
+        base_name = os.path.basename(sf_path)
+        if base_name[-4:] != '.zip':
+            raise IOError("Shapefile must be a .zip file (got '%s')" % sf_path)
+
+        sf_name = base_name[:-4]
 
         # Unzip the shapefile in memory before passing the files off to the shapefile reader.
         def _decompress(fzip, name):
@@ -22,7 +25,7 @@ class CountyDB(object):
             mem_f.seek(0)
             return mem_f
 
-        fzip = zipfile.ZipFile("%s/%s.zip" % (sf_path, sf_name), 'r')
+        fzip = zipfile.ZipFile(sf_path, 'r')
         mem_dbf = _decompress(fzip, "%s.dbf" % sf_name)
         mem_shp = _decompress(fzip, "%s.shp" % sf_name)
         mem_shx = _decompress(fzip, "%s.shx" % sf_name)
