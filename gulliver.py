@@ -11,7 +11,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from mpl_toolkits.basemap import Basemap
 
-from visited import visited, slept, lived
 from county_db import CountyDB
 from travel import TravelManager
 
@@ -19,6 +18,7 @@ def main():
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--shp', dest='shp', help="Path to county shapefile", required=True)
+    ap.add_argument('--travel', dest='name', help="Name of the file (without the .py) that describes your travel.", default='default')
 
     args = ap.parse_args()
 
@@ -36,9 +36,12 @@ def main():
         lat_1=19, lat_2=22, lon_0=-157, area_thresh=100)
 
     db = CountyDB(sf_path=args.shp)
-    trvl_visited = TravelManager(visited)
-    trvl_slept = TravelManager(slept)
-    trvl_lived = TravelManager(lived)
+
+    travel = __import__(args.name, globals(), locals(), ['name', 'visited', 'slept', 'lived'], -1)
+
+    trvl_visited = TravelManager(travel.visited)
+    trvl_slept = TravelManager(travel.slept)
+    trvl_lived = TravelManager(travel.lived)
 
     trvl_visited.print_stats()
 
@@ -110,13 +113,13 @@ def main():
 
     pylab.sca(ax_48)
 
-    header = "Counties Visited"
+    header = "%s's Travels" % travel.name
     update = "Last Updated %s" % datetime.now().strftime("%d %B %Y")
     stats = "Visited: %d (%d states) / Slept in: %d (%d states) / Lived in: %d (%d states)" % (trvl_visited.count(), trvl_visited.count(states=True), 
         trvl_slept.count(), trvl_slept.count(states=True), trvl_lived.count(), trvl_lived.count(states=True))
 
     pylab.title("%s\n%s\n%s" % (header, update, stats))
-    pylab.savefig("travels.png", dpi=pylab.gcf().dpi)
+    pylab.savefig("%s_travels.png" % args.name, dpi=pylab.gcf().dpi)
 
     return
 
