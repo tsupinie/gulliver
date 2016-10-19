@@ -103,7 +103,7 @@ def main():
 
     pylab.sca(ax_48)
 
-    header = "Tim's Counties"
+    header = "Counties Visited"
     update = "Last Updated %s" % datetime.now().strftime("%d %B %Y")
     stats = "Visited: %d (%d states) / Slept in: %d (%d states) / Lived in: %d (%d states)" % (trvl_visited.count(), trvl_visited.count(states=True), 
         trvl_slept.count(), trvl_slept.count(states=True), trvl_lived.count(), trvl_lived.count(states=True))
