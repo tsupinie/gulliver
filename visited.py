@@ -1,4 +1,3 @@
-from collections import Counter
 
 visited = [
     ('Mobile',      'AL'),

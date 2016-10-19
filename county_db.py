@@ -1,13 +1,31 @@
 
 from itertools import izip
+import tarfile
+import gzip
+import shutil
+import cStringIO
 
 import shapefile
 
 from fips import get_abbrev
 
 class CountyDB(object):
-    def __init__(self, sf_path="/Users/tsupinie/data/tl_2009_us_county"):
-        self._sf = shapefile.Reader(sf_path)
+    def __init__(self, sf_path="shp/"):
+        sf_name = "tl_2009_us_county"
+
+        # Unzip the shapefile in memory before passing the files off to the shapefile reader.
+        mem_file = cStringIO.StringIO()
+
+        with gzip.open("%s/%s.tar" % (sf_path, sf_name), 'rb') as f_in:
+            shutil.copyfileobj(f_in, mem_file)
+
+        mem_file.seek(0)
+        tar = tarfile.open(fileobj=mem_file)
+        dbf = tar.extractfile("%s.dbf" % sf_name)
+        shp = tar.extractfile("%s.shp" % sf_name)
+        shx = tar.extractfile("%s.shx" % sf_name)
+
+        self._sf = shapefile.Reader(dbf=dbf, shp=shp, shx=shx)
         field_names = zip(*self._sf.fields)[0]
         self._ct_name_idx = field_names.index('NAME') - 1
         self._st_fips_idx = field_names.index('STATEFP') - 1

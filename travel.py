@@ -32,6 +32,6 @@ class TravelManager(object):
                 by_state[c[1]] = 1
 
         print "Number of states:", len(by_state.keys())
-
+        print "Breakdown by state:"
         for state, count in sorted(by_state.items(), key=lambda x: x[1], reverse=True):
             print "%s: %d" % (state, count)
