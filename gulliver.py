@@ -39,6 +39,9 @@ def main():
 
     travel = __import__(args.name, globals(), locals(), ['name', 'visited', 'slept', 'lived'], -1)
 
+    travel.slept = list(set(travel.slept) | set(travel.lived))
+    travel.visited = list(set(travel.visited) | set(travel.slept))
+
     trvl_visited = TravelManager(travel.visited)
     trvl_slept = TravelManager(travel.slept)
     trvl_lived = TravelManager(travel.lived)
