@@ -10,30 +10,38 @@ import shapefile
 from fips import get_abbrev
 
 class CountyDB(object):
-    def __init__(self, sf_path="./tl_2016_us_county.zip"):
-        base_name = os.path.basename(sf_path)
-        if base_name[-4:] != '.zip':
-            raise IOError("Shapefile must be a .zip file (got '%s')" % sf_path)
+    def __init__(self, sf_path="./tl_2016_us_county"):
+        if os.path.exists("%s.dbf" % sf_path) and os.path.exists("%s.shp" % sf_path) and os.path.exists("%s.shx" % sf_path):
+            mem_dbf = open("%s.dbf" % sf_path, 'rb')
+            mem_shp = open("%s.shp" % sf_path, 'rb')
+            mem_shx = open("%s.shx" % sf_path, 'rb')
 
-        sf_name = base_name[:-4]
+        elif os.path.exists(sf_path) and sf_path.endswith('.zip') or os.path.exists("%s.zip" % sf_path):
+            if not sf_path.endswith('.zip'):
+                sf_path = "%s.zip" % sf_path
 
-        # Unzip the shapefile in memory before passing the files off to the shapefile reader.
-        def _decompress(fzip, name):
-            mem_f = cStringIO.StringIO()
-            f = fzip.open(name)
-            shutil.copyfileobj(f, mem_f)
-            mem_f.seek(0)
-            return mem_f
+            sf_name = os.path.basename(sf_path)[:-4]
 
-        fzip = zipfile.ZipFile(sf_path, 'r')
-        mem_dbf = _decompress(fzip, "%s.dbf" % sf_name)
-        mem_shp = _decompress(fzip, "%s.shp" % sf_name)
-        mem_shx = _decompress(fzip, "%s.shx" % sf_name)
+            # Unzip the shapefile in memory before passing the files off to the shapefile reader.
+            def _decompress(fzip, name):
+                mem_f = cStringIO.StringIO()
+                f = fzip.open(name)
+                shutil.copyfileobj(f, mem_f)
+                mem_f.seek(0)
+                return mem_f
+
+            fzip = zipfile.ZipFile(sf_path, 'r')
+            mem_dbf = _decompress(fzip, "%s.dbf" % sf_name)
+            mem_shp = _decompress(fzip, "%s.shp" % sf_name)
+            mem_shx = _decompress(fzip, "%s.shx" % sf_name)
+        else:
+            raise IOError("Unable to find shapefile '%s'" % sf_path)
 
         self._sf = shapefile.Reader(dbf=mem_dbf, shp=mem_shp, shx=mem_shx)
         field_names = zip(*self._sf.fields)[0]
         self._ct_name_idx = field_names.index('NAME') - 1
         self._st_fips_idx = field_names.index('STATEFP') - 1
+
 
     def search(self, ct_list):
         geoms = []
