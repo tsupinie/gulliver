@@ -1,5 +1,5 @@
 # Gulliver
-Create maps of US counties to show travels.
+Create maps of US counties colored to show your travels.
 
 ## Requirements:
 * matplotlib
@@ -40,7 +40,7 @@ See `default.py` for an example. Next, invoke the command
 
 `$ python gulliver.py --shp /path/to/shapefile --travel mytravel`
 
-to create the map. It will be placed in `<travel>_travels.png`.
+to create the map. It will be placed in `<travel>_travels.png` (in this case, `mytravel_travels.png`).
 
 If you've unzipped the shapefile, `/path/to/shapefile` should be the name of the shapefile without 
 the `.dbf` or `.shp` extension.
