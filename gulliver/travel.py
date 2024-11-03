@@ -12,6 +12,10 @@ class TravelManager(object):
             ctys, states = zip(*self._ctys)
             cntns = args[0] in states
         return cntns
+    
+    def contains_state(self, *args):
+        ctys, states = zip(*self._ctys)
+        return len(set(states) & set(args)) > 0
 
     def count(self, states=False):
         if states:
@@ -22,7 +26,7 @@ class TravelManager(object):
         return cnt
 
     def print_stats(self):
-        print "Number of counties:", self.count() 
+        print("Number of counties:", self.count())
         by_state = {}
 
         for c in self._ctys:
@@ -31,7 +35,7 @@ class TravelManager(object):
             except KeyError:
                 by_state[c[1]] = 1
 
-        print "Number of states:", len(by_state.keys())
-        print "Breakdown by state:"
+        print("Number of states:", len(by_state.keys()))
+        print("Breakdown by state:")
         for state, count in sorted(by_state.items(), key=lambda x: x[1], reverse=True):
-            print "%s: %d" % (state, count)
+            print("%s: %d" % (state, count))

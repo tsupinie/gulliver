@@ -1,43 +1,57 @@
-import struct
+
+import numpy as np
+
 from datetime import datetime
 import argparse
+from importlib import import_module
 
-import matplotlib
-matplotlib.use('agg')
-import pylab
+import matplotlib as mpl
+mpl.use('agg')
+import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.transforms import Affine2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from mpl_toolkits.basemap import Basemap
+import cartopy
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
-from gulliver.county_db import CountyDB
 from gulliver.travel import TravelManager
+from gulliver.ne_records import NaturalEarthFeatureRecords
+
+
+def create_county_travel_feature(feat_source, trvl):
+    geoms = []
+
+    for rec in feat_source.records():
+        if trvl.contains(rec.attributes['NAME_EN'], rec.attributes['REGION']):
+            geoms.append(rec.geometry)
+
+    return cfeature.ShapelyFeature(geoms, ccrs.PlateCarree())
+
+
+def create_state_travel_feature(feat_source, trvl):
+    geoms = []
+
+    for rec in feat_source.records():
+        if rec.attributes['iso_a2'] == 'US':
+            if trvl.contains_state(rec.attributes['postal']):
+                geoms.append(rec.geometry)
+
+    return cfeature.ShapelyFeature(geoms, ccrs.PlateCarree())
+
 
 def main():
     ap = argparse.ArgumentParser()
-
-    ap.add_argument('--shp', dest='shp', help="Path to county shapefile", required=True)
     ap.add_argument('--travel', dest='name', help="Name of the file (without the .py) that describes your travel.", default='default')
 
     args = ap.parse_args()
 
-    # Lambert Conformal map of USA lower 48 states
-    map_48 = Basemap(projection='lcc', resolution='i', 
-        llcrnrlon=-119, llcrnrlat=22, urcrnrlon=-64, urcrnrlat=49,
-        lat_1=33, lat_2=45, lon_0=-95, area_thresh=10000)
+    crs_conus = ccrs.LambertConformal(central_longitude=-97.5, central_latitude=38.5, standard_parallels=(33, 45))
+    crs_ak = ccrs.LambertConformal(central_longitude=-150, central_latitude=60, standard_parallels=(55, 65))
+    crs_hi = ccrs.LambertConformal(central_longitude=-157, central_latitude=20, standard_parallels=(19, 22))
 
-    map_ak = Basemap(projection='lcc', resolution='i', 
-        llcrnrlon=-165, llcrnrlat=52, urcrnrlon=-115, urcrnrlat=71,
-        lat_1=55, lat_2=65, lon_0=-145, area_thresh=10000)
-
-    map_hi = Basemap(projection='lcc', resolution='i', 
-        llcrnrlon=-160.5, llcrnrlat=18.7, urcrnrlon=-154.5, urcrnrlat=22.5,
-        lat_1=19, lat_2=22, lon_0=-157, area_thresh=100)
-
-    db = CountyDB(sf_path=args.shp)
-
-    travel = __import__(args.name, globals(), locals(), ['name', 'visited', 'slept', 'lived'], -1)
+    travel = import_module(args.name)
 
     travel.slept = list(set(travel.slept) | set(travel.lived))
     travel.visited = list(set(travel.visited) | set(travel.slept))
@@ -48,81 +62,62 @@ def main():
 
     trvl_visited.print_stats()
 
-    pylab.figure(figsize=(10, 8), dpi=150)
-    ax_48 = pylab.axes((0, 0, 1, 1))
-    ax_ak = inset_axes(ax_48, width=1.75, height=1.75, loc=3, bbox_transform=Affine2D().translate(0, -14))
-    ax_hi = inset_axes(ax_48, width=1.5, height=1.5, loc=3, bbox_transform=Affine2D().translate(270, -35))
+    fig = plt.figure(figsize=(10, 8), dpi=300)
+    ax_48 = plt.axes((0, 0, 1, 1), projection=crs_conus)
+    ax_48.set_extent((-119.2, -74, 23, 50))
 
-    labels = {}
+    ax_ak = inset_axes(ax_48, width=1.85, height=1.85, loc=3, bbox_transform=Affine2D().translate(0, -46), 
+                       axes_class=cartopy.mpl.geoaxes.GeoAxes, axes_kwargs=dict(projection=crs_ak))
+    ax_ak.set_extent((-165, -129, 53.4, 71))
+
+    ax_hi = inset_axes(ax_48, width=1.4, height=1.4, loc=3, bbox_transform=Affine2D().translate(574, -70), 
+                       axes_class=cartopy.mpl.geoaxes.GeoAxes, axes_kwargs=dict(projection=crs_hi))
+    ax_hi.set_extent((-160.5, -154.5, 18.7, 22.5))
+
     legend_polys = []
     legend_labels = []
 
-    for cty in db:
-        color = 'none'
-        label = "Not visited"
-        if trvl_lived.contains(cty['county'], cty['state']):
-            label = "Lived-in county"
-            color = '#990066'
-        elif trvl_slept.contains(cty['county'], cty['state']):
-            label = "Slept-in county"
-            color = '#000088'
-        elif trvl_visited.contains(cty['county'], cty['state']):
-            label = "Visited county"
-            color = '#008800'
-        elif trvl_lived.contains(cty['state']):
-            label = "Lived-in state"
-            color = '#ff99ff'
-        elif trvl_slept.contains(cty['state']):
-            label = "Slept-in state"
-            color = '#8888ff'
-        elif trvl_visited.contains(cty['state']):
-            label = "Visited state"
-            color = '#88ff88'
+    counties = NaturalEarthFeatureRecords('cultural', 'admin_2_counties_lakes', '10m')
+    states = NaturalEarthFeatureRecords('cultural', 'admin_1_states_provinces_lakes', '10m')
+    countries = cfeature.NaturalEarthFeature('cultural', 'admin_0_countries_lakes', '10m')
+        
+    visited_county_feature = create_county_travel_feature(counties, trvl_visited)
+    slept_county_feature = create_county_travel_feature(counties, trvl_slept)
+    lived_county_feature = create_county_travel_feature(counties, trvl_lived)
+    visited_state_feature = create_state_travel_feature(states, trvl_visited)
+    slept_state_feature = create_state_travel_feature(states, trvl_slept)
+    lived_state_feature = create_state_travel_feature(states, trvl_lived)
 
-        for pt_list in cty['points']:
-            if cty['state'] == 'AK':
-                poly = Polygon(zip(*map_ak(*zip(*pt_list))), fc=color, lw=0.5, label=label)
-                ax_ak.add_patch(poly)
-            elif cty['state'] == 'HI':
-                poly = Polygon(zip(*map_hi(*zip(*pt_list))), fc=color, lw=0.5, label=label)
-                ax_hi.add_patch(poly)
-            else:
-                poly = Polygon(zip(*map_48(*zip(*pt_list))), fc=color, lw=0.5, label=label)
-                ax_48.add_patch(poly)
+    for ax in [ax_48, ax_ak, ax_hi]:
+        for feat, color, label in [(visited_state_feature, '#88ff88', 'Visited state'),
+                                   (slept_state_feature, '#8888ff', 'Slept-in state'),
+                                   (lived_state_feature, '#ff99ff', 'Lived-in state'),
+                                   (visited_county_feature, '#008800', 'Visited county'),
+                                   (slept_county_feature, '#000088', 'Slept-in county'),
+                                   (lived_county_feature, '#990066', 'Lived-in county')]:
+            ax.add_feature(feat, edgecolor='none', facecolor=color)
 
-        if label != "Not visited" and (label not in labels or not labels[label]):
-            legend_polys.append(poly)
-            legend_labels.append(label)
-            labels[label] = True
+            if ax == ax_48:
+                legend_labels.append(label)
+                legend_polys.append(Polygon(np.array([]).reshape((0, 2)), facecolor=color, edgecolor='k'))
+
+        for feat, linewidth in [(counties, 0.5),
+                                (states, 1.0),
+                                (countries, 1.5)]:
+            ax.add_feature(feat, edgecolor='k', facecolor='none', linewidth=linewidth)
 
     legend_polys, legend_labels = zip(*sorted(zip(legend_polys, legend_labels), key=lambda x: x[1]))
 
-    pylab.sca(ax_48)
-    map_48.drawcoastlines(linewidth=1.0)
-    map_48.drawcountries(linewidth=1.0)
-    map_48.drawstates(linewidth=1.0)
-
-    pylab.sca(ax_ak)
-    map_ak.drawcoastlines(linewidth=1.0)
-    map_ak.drawcountries(linewidth=1.0)
-    map_ak.drawstates(linewidth=1.0)
-
-    pylab.sca(ax_hi)
-    map_hi.drawcoastlines(linewidth=1.0)
-    map_hi.drawcountries(linewidth=1.0)
-    map_hi.drawstates(linewidth=1.0)
-
-    pylab.figlegend(legend_polys, legend_labels, 'lower center', ncol=3)
-
-    pylab.sca(ax_48)
+    plt.figlegend(legend_polys, legend_labels, 'lower center', ncol=3)
 
     header = "%s's Travels" % travel.name
     update = "Last Updated %s" % datetime.now().strftime("%d %B %Y")
     stats = "Visited: %d (%d states) / Slept in: %d (%d states) / Lived in: %d (%d states)" % (trvl_visited.count(), trvl_visited.count(states=True), 
         trvl_slept.count(), trvl_slept.count(states=True), trvl_lived.count(), trvl_lived.count(states=True))
 
-    pylab.title("%s\n%s\n%s" % (header, update, stats))
-    pylab.savefig("%s_travels.png" % args.name, dpi=pylab.gcf().dpi)
+    ax_48.set_title("%s\n%s\n%s" % (header, update, stats))
+
+    plt.savefig("%s_travels.png" % args.name, dpi=fig.dpi)
 
     return
 
